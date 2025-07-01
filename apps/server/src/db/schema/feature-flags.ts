@@ -9,3 +9,11 @@ export const featureFlags = sqliteTable("feature_flags", {
     createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`CURRENT_TIMESTAMP`),
     updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`CURRENT_TIMESTAMP`),
 });
+
+export const featureFlagExcludes = sqliteTable("feature_flag_excludes", {
+    id: text("id").primaryKey().$defaultFn(() => nanoid()),
+    flag: text("flag").references(() => featureFlags.flag).notNull(),
+    excludedFlag: text("excluded_flag").references(() => featureFlags.flag).notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: integer("updated_at", { mode: "timestamp" }).notNull().default(sql`CURRENT_TIMESTAMP`),
+});

@@ -24,7 +24,6 @@ export function FeatureFlags() {
 	);
 
 	const handleFlagUpdate = (flag: string, value: boolean) => {
-		// Toggle the value: if current value is true, set to false, and vice versa
 		updateFlagMutation.mutate({ flag, value: !value });
 	};
 
