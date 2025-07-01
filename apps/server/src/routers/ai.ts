@@ -1,23 +1,32 @@
-import { publicProcedure, router } from "@/lib/trpc";
-import { z } from "zod";
-import { streamText } from "ai";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { generateText } from "ai";
+import { z } from "zod";
+import { publicProcedure, router } from "@/lib/trpc";
 
 const google = createGoogleGenerativeAI({
-    apiKey: process.env.GOOGLE_API_KEY,
+	apiKey: process.env.GOOGLE_API_KEY,
 });
 
 export const aiRouter = router({
-    chat: publicProcedure
-        .input(z.object({ messages: z.any() }))
-        .mutation(async ({ input }) => {
-            const { messages } = input;
+	chat: publicProcedure
+		.input(
+			z.object({
+				messages: z.array(
+					z.object({
+						role: z.enum(["user", "assistant"]),
+						content: z.string(),
+					}),
+				),
+			}),
+		)
+		.mutation(async ({ input }) => {
+			const { messages } = input;
 
-            const result = await streamText({
-                model: google("models/gemini-1.5-flash-latest"),
-                messages,
-            });
+			const result = await generateText({
+				model: google("gemini-2.5-flash"),
+				messages,
+			});
 
-            return result.toDataStreamResponse();
-        }),
+			return result.text;
+		}),
 });

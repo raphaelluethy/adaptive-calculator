@@ -1,39 +1,54 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/utils/trpc";
 
 export function FeatureFlags() {
-  const queryClient = useQueryClient();
+	const queryClient = useQueryClient();
 
-  const flagsQuery = useQuery(trpc.featureFlags.get.queryOptions());
+	const flagsQuery = useQuery(trpc.featureFlags.get.queryOptions());
 
-  const setFlag = useMutation(trpc.featureFlags.set.mutationOptions({
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: trpc.featureFlags.get.queryKey() });
-    },
-  }));
+	const updateFlagMutation = useMutation(
+		trpc.featureFlags.update.mutationOptions({
+			onSuccess: () => {
+				queryClient.invalidateQueries({
+					queryKey: trpc.featureFlags.get.queryKey(),
+				});
+				toast.success(`Feature flag updated`);
+			},
+			onError: (error) => {
+				console.error("Error updating feature flag:", error);
+				toast.error("Failed to update feature flag");
+			},
+		}),
+	);
 
-  return (
-    <div className="h-full overflow-y-auto">
-      {flagsQuery.data && (
-        <div className="space-y-2">
-          {Object.entries(flagsQuery.data).map(([key, value]) => (
-            <div
-              key={key}
-              className="flex justify-between items-center p-2 border rounded"
-            >
-              <span className="text-sm font-medium">{key}</span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setFlag.mutate({ flag: key, value: !value })}
-              >
-                {value ? "Disable" : "Enable"}
-              </Button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+	const handleFlagUpdate = (flag: string, value: boolean) => {
+		// Toggle the value: if current value is true, set to false, and vice versa
+		updateFlagMutation.mutate({ flag, value: !value });
+	};
+
+	return (
+		<div className="h-full overflow-y-auto">
+			{flagsQuery.data && (
+				<div className="space-y-2">
+					{flagsQuery.data.map((flag) => (
+						<div
+							key={flag.flag}
+							className="flex justify-between items-center p-2 border rounded"
+						>
+							<span className="text-sm font-medium">{flag.flag}</span>
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => handleFlagUpdate(flag.flag, flag.value)}
+							>
+								{flag.value ? "Disable" : "Enable"}
+							</Button>
+						</div>
+					))}
+				</div>
+			)}
+		</div>
+	);
 }

@@ -9,9 +9,18 @@ export function CalculatorUI() {
 	const { display, handleButtonClick } = useCalculator();
 	const theme = getActiveTheme();
 	const uiQuery = useQuery(trpc.calculator.getUI.queryOptions());
+	const flagsQuery = useQuery(trpc.featureFlags.get.queryOptions());
 	const ui = uiQuery.data;
 	if (!ui) {
 		return <div>Loading...</div>;
+	}
+
+	const isNewCalculatorDesignEnabled = flagsQuery.data?.find(
+		(flag) => flag.flag === "new-calculator-design",
+	)?.value;
+
+	if (!isNewCalculatorDesignEnabled) {
+		return <div>New calculator design is disabled</div>;
 	}
 
 	return (

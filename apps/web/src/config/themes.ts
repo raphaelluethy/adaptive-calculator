@@ -27,6 +27,13 @@ export const themes = {
     operatorButton: "bg-[#bb9af7] hover:bg-[#c8aef9] text-[#1a1b26]",
     equalsButton: "bg-[#7aa2f7] hover:bg-[#8cb0fa] text-[#1a1b26]",
   },
+  postmodern: {
+    calculator: "bg-gradient-to-br from-[#ff0080] via-[#7928ca] to-[#ff8a00] text-white",
+    display: "bg-black text-[#00ff41] border-2 border-[#ff0080] shadow-[0_0_20px_#ff0080]",
+    button: "bg-[#000] border-2 border-[#00ff41] text-[#00ff41] hover:bg-[#00ff41] hover:text-black transform hover:rotate-3 transition-all duration-200 shadow-[0_0_10px_#00ff41]",
+    operatorButton: "bg-[#ff0080] border-2 border-[#ffff00] text-black hover:bg-[#ffff00] hover:text-[#ff0080] transform hover:-rotate-3 transition-all duration-200 shadow-[0_0_15px_#ff0080]",
+    equalsButton: "bg-gradient-to-r from-[#ff0080] to-[#00ff41] border-2 border-[#ffff00] text-black hover:from-[#00ff41] hover:to-[#ff0080] transform hover:scale-110 transition-all duration-300 shadow-[0_0_20px_#ffff00]",
+  },
 };
 
 export type Theme = keyof typeof themes;

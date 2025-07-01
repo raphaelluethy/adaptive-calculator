@@ -1,6 +1,6 @@
 import { protectedProcedure, publicProcedure, router } from "../lib/trpc";
-import { calculatorRouter } from "./calculator";
 import { aiRouter } from "./ai";
+import { calculatorRouter } from "./calculator";
 import { featureFlagsRouter } from "./feature-flags";
 
 export const appRouter = router({
