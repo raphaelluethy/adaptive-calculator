@@ -90,6 +90,29 @@ export const aiTools = {
         },
     }),
 
+    executeGemini: tool({
+        description:
+            "Execute the Gemini CLI to perform coding changes directly",
+        parameters: z.object({
+            command: z
+                .string()
+                .describe(
+                    "The query for the changes that gemini should apply. Do not add any flags to the command, only a plain string that describes the changes."
+                ),
+        }),
+        execute: async ({ command }) => {
+            const result = await executeShellCommand(
+                `gemini -y -p "${command}"`
+            );
+            return {
+                command,
+                output: result.output,
+                executionTimeMs: result.executionTimeMs,
+                exitCode: result.exitCode,
+            };
+        },
+    }),
+
     updateFeatureFlag: tool({
         description: "Update feature flags in the calculator application",
         parameters: z.object({
