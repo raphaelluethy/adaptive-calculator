@@ -86,7 +86,7 @@ export const defaultFeatureFlags = {
     },
     defaultTheme: {
         flag: "default-theme",
-        value: false,
+        value: true,
         excludes: [
             "light-theme",
             "dark-theme",
