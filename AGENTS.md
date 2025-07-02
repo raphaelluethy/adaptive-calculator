@@ -8,6 +8,9 @@
 - `pnpm dev:server` - Start server only (port 3000)
 - `pnpm db:push` - Push database schema changes
 - `pnpm db:studio` - Open database studio
+- `pnpm db:generate` - Generate database migrations
+- `pnpm db:migrate` - Run database migrations
+- Individual package commands: `turbo -F <package> <command>`
 
 ## Code Style Guidelines
 - Use TypeScript with strict mode enabled

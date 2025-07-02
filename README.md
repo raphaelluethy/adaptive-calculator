@@ -1,20 +1,17 @@
-# calculator
+# Calculator
 
-This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines React, TanStack Router, Hono, TRPC, and more.
+A modern, feature-rich calculator application built with a full-stack TypeScript architecture. This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack) and includes advanced features like AI-powered calculations, feature flags, and multiple UI themes.
 
-## Features
+## Tech Stack
 
-- **TypeScript** - For type safety and improved developer experience
-- **TanStack Router** - File-based routing with full type safety
-- **TailwindCSS** - Utility-first CSS for rapid UI development
-- **shadcn/ui** - Reusable UI components
-- **Hono** - Lightweight, performant server framework
-- **tRPC** - End-to-end type-safe APIs
-- **Node.js** - Runtime environment
-- **Drizzle** - TypeScript-first ORM
-- **SQLite/Turso** - Database engine
-- **Authentication** - Email & password authentication with Better Auth
-- **Turborepo** - Optimized monorepo build system
+- **Frontend**: React 19, TanStack Router, TailwindCSS v4, shadcn/ui
+- **Backend**: Hono, tRPC, Node.js
+- **Database**: Drizzle ORM with LibSQL/Turso
+- **Authentication**: Better Auth
+- **Build System**: Turborepo with pnpm workspaces
+- **Language**: TypeScript with strict mode
+- **Styling**: Tailwind CSS utility classes
+- **AI Integration**: Google AI SDK for enhanced calculator features
 
 ## Getting Started
 
@@ -63,11 +60,21 @@ calculator/
 
 ## Available Scripts
 
+### Development
 - `pnpm dev`: Start all applications in development mode
+- `pnpm dev:web`: Start only the web application (port 3001)
+- `pnpm dev:server`: Start only the server (port 3000)
+
+### Build & Type Checking
 - `pnpm build`: Build all applications
-- `pnpm dev:web`: Start only the web application
-- `pnpm dev:server`: Start only the server
 - `pnpm check-types`: Check TypeScript types across all apps
+
+### Database Commands
 - `pnpm db:push`: Push schema changes to database
 - `pnpm db:studio`: Open database studio UI
+- `pnpm db:generate`: Generate database migrations
+- `pnpm db:migrate`: Run database migrations
 - `cd apps/server && pnpm db:local`: Start the local SQLite database
+
+### Individual Package Commands
+- `turbo -F <package> <command>`: Run commands for specific packages (e.g., `turbo -F web build`)
