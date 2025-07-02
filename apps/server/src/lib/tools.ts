@@ -129,16 +129,12 @@ export const aiTools = {
                 .describe(
                     "Maximum time to wait for gemini to complete in milliseconds"
                 ),
-            persistence: z
-                .boolean()
-                .optional()
-                .default(true)
-                .describe(
-                    "Whether to keep the tmux session open after completion for debugging purposes. Defaults to true."
-                ),
         }),
-        execute: async ({ command, timeout, persistence }) => {
+        execute: async ({ command, timeout }) => {
             const startTime = Date.now();
+
+            // Check environment variable for persistence setting, default to true
+            const persistence = process.env.TMUX_PERSIST !== "false";
 
             // Generate unique session name and file paths
             const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
@@ -158,7 +154,7 @@ export const aiTools = {
             const geminiCommand = `gemini -y -p "${command.replace(
                 /"/g,
                 '\\"'
-            )}"`;
+            )}. Do not run any shell commands like pnpm dev, pnpm build, or pnpm start. Just apply the changes to the codebase."`;
 
             // Create a wrapper script that captures output and exit code
             const wrapperScript = `
