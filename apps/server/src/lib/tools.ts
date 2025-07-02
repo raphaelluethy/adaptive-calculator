@@ -2,6 +2,9 @@ import { exec } from "node:child_process";
 import { promisify } from "node:util";
 import { tool } from "ai";
 import { z } from "zod";
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
+import * as os from "node:os";
 import {
     defaultFeatureFlags,
     featureFlagsRouter,
@@ -72,6 +75,26 @@ async function updateFeatureFlag(flagName: string, enabled: boolean) {
     }
 }
 
+// Helper function to wait for tmux session to complete
+async function waitForTmuxSession(
+    sessionName: string,
+    checkInterval: number = 2000
+): Promise<boolean> {
+    while (true) {
+        try {
+            const { stdout } = await execAsync(
+                `tmux list-sessions | grep "^${sessionName}:" || echo "NOT_FOUND"`
+            );
+            if (stdout.trim() === "NOT_FOUND") {
+                return true; // Session has ended
+            }
+            await new Promise((resolve) => setTimeout(resolve, checkInterval));
+        } catch {
+            return true; // Session has ended
+        }
+    }
+}
+
 export const aiTools = {
     executeShellCommand: tool({
         description:
@@ -92,50 +115,218 @@ export const aiTools = {
 
     executeGemini: tool({
         description:
-            "Executes the Gemini CLI within a new, detached tmux session to perform coding changes. This is useful for long-running tasks. You can attach to the session to monitor progress.",
+            "Execute the Gemini CLI in a tmux session for monitoring, wait for completion, and return the full output",
         parameters: z.object({
             command: z
                 .string()
                 .describe(
-                    "The query for the changes that Gemini should apply. Do not add any flags to the command, only a plain string that describes the changes."
+                    "The query for the changes that gemini should apply. Do not add any flags to the command, only a plain string that describes the changes."
                 ),
-            sessionName: z
-                .string()
+            timeout: z
+                .number()
                 .optional()
+                .default(600000) // 10 minutes default
                 .describe(
-                    "An optional name for the tmux session. Defaults to 'gemini-session'."
+                    "Maximum time to wait for gemini to complete in milliseconds"
                 ),
         }),
-        execute: async ({ command, sessionName = "gemini-session" }) => {
-            // Sanitize sessionName to prevent command injection
-            const sanitizedSessionName = sessionName.replace(
-                /[^a-zA-Z0-9_-]/g,
-                ""
+        execute: async ({ command, timeout }) => {
+            const startTime = Date.now();
+
+            // Generate unique session name and file paths
+            const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+            const sessionName = `gemini-${timestamp}`;
+            const tmpDir = os.tmpdir();
+            const outputFile = path.join(tmpDir, `${sessionName}-output.log`);
+            const exitCodeFile = path.join(
+                tmpDir,
+                `${sessionName}-exitcode.log`
             );
-            const geminiCommand = `gemini -y -p "${command}"`;
-            // Create a new detached tmux session with the specified name and command
-            const tmuxCommand = `tmux new-session -d -s ${sanitizedSessionName} '${geminiCommand}'`;
 
-            const result = await executeShellCommand(tmuxCommand);
+            // Create the gemini command with output redirection
+            const geminiCommand = `gemini -y -p "${command.replace(
+                /"/g,
+                '\\"'
+            )}"`;
 
-            if (result.exitCode === 0) {
+            // Create a wrapper script that captures output and exit code
+            const wrapperScript = `
+#!/bin/bash
+{
+    ${geminiCommand} 2>&1 | tee "${outputFile}"
+    echo $? > "${exitCodeFile}"
+} || {
+    echo $? > "${exitCodeFile}"
+}
+echo "\\nGemini finished with exit code: $(cat "${exitCodeFile}")"
+echo "Press Ctrl+C to close this session..."
+sleep infinity
+            `;
+
+            // Write wrapper script to temp file
+            const scriptFile = path.join(tmpDir, `${sessionName}-script.sh`);
+            await fs.writeFile(scriptFile, wrapperScript, { mode: 0o755 });
+
+            // Create tmux session running the wrapper script
+            const tmuxCommand = `tmux new-session -d -s "${sessionName}" "bash ${scriptFile}"`;
+
+            try {
+                await execAsync(tmuxCommand);
+
+                console.log(`Gemini started in tmux session: ${sessionName}`);
+                console.log(
+                    `To monitor: tmux attach-session -t ${sessionName}`
+                );
+
+                // Wait for the session to complete or timeout
+                const checkInterval = 2000; // Check every 2 seconds
+                const maxChecks = Math.floor(timeout / checkInterval);
+                let completed = false;
+
+                for (let i = 0; i < maxChecks; i++) {
+                    // Check if exit code file exists (indicates completion)
+                    try {
+                        await fs.access(exitCodeFile);
+                        completed = true;
+                        break;
+                    } catch {
+                        // File doesn't exist yet, continue waiting
+                    }
+
+                    // Also check if session still exists
+                    const sessionExists = await executeShellCommand(
+                        `tmux list-sessions | grep "^${sessionName}:" || echo "NOT_FOUND"`
+                    );
+
+                    if (sessionExists.output.trim() === "NOT_FOUND") {
+                        // Session ended unexpectedly
+                        break;
+                    }
+
+                    await new Promise((resolve) =>
+                        setTimeout(resolve, checkInterval)
+                    );
+                }
+
+                // Read the output and exit code
+                let output = "";
+                let exitCode = 1;
+
+                try {
+                    output = await fs.readFile(outputFile, "utf-8");
+                } catch (error) {
+                    output = "Failed to read output file";
+                }
+
+                try {
+                    const exitCodeStr = await fs.readFile(
+                        exitCodeFile,
+                        "utf-8"
+                    );
+                    exitCode = parseInt(exitCodeStr.trim(), 10);
+                } catch (error) {
+                    exitCode = completed ? 0 : -1;
+                }
+
+                // Clean up temporary files
+                try {
+                    await fs.unlink(outputFile);
+                    await fs.unlink(exitCodeFile);
+                    await fs.unlink(scriptFile);
+                } catch {
+                    // Ignore cleanup errors
+                }
+
+                // Kill the tmux session if it's still running
+                try {
+                    await execAsync(`tmux kill-session -t "${sessionName}"`);
+                } catch {
+                    // Session might already be gone
+                }
+
+                const executionTimeMs = Date.now() - startTime;
+
+                if (!completed && executionTimeMs >= timeout) {
+                    return {
+                        command,
+                        output: output || "Command timed out",
+                        executionTimeMs,
+                        exitCode: -1,
+                        error: `Gemini execution timed out after ${timeout}ms`,
+                        sessionName,
+                    };
+                }
+
                 return {
                     command,
-                    sessionName: sanitizedSessionName,
-                    message: `Successfully started Gemini in a detached tmux session named '${sanitizedSessionName}'.`,
-                    attachCommand: `tmux attach-session -t ${sanitizedSessionName}`,
-                    executionTimeMs: result.executionTimeMs,
-                    exitCode: result.exitCode,
+                    output,
+                    executionTimeMs,
+                    exitCode,
+                    sessionName,
+                    completed: true,
                 };
-            } else {
+            } catch (error: any) {
+                const executionTimeMs = Date.now() - startTime;
+
+                // Try to clean up
+                try {
+                    await fs.unlink(outputFile);
+                    await fs.unlink(exitCodeFile);
+                    await fs.unlink(scriptFile);
+                    await execAsync(`tmux kill-session -t "${sessionName}"`);
+                } catch {
+                    // Ignore cleanup errors
+                }
+
                 return {
                     command,
-                    sessionName: sanitizedSessionName,
-                    message: `Failed to start Gemini in a tmux session.`,
-                    error: result.output || "Unknown error",
-                    executionTimeMs: result.executionTimeMs,
-                    output: result.output,
-                    exitCode: result.exitCode,
+                    output: "",
+                    error: error.message,
+                    executionTimeMs,
+                    exitCode: error.code || 1,
+                    sessionName,
+                };
+            }
+        },
+    }),
+
+    checkGeminiSession: tool({
+        description: "Check the live status of a running Gemini tmux session",
+        parameters: z.object({
+            sessionName: z.string().describe("The tmux session name to check"),
+        }),
+        execute: async ({ sessionName }) => {
+            try {
+                // Check if session exists
+                const listResult = await executeShellCommand(
+                    `tmux list-sessions | grep "^${sessionName}:" || echo "Session not found"`
+                );
+
+                if (listResult.output.includes("Session not found")) {
+                    return {
+                        sessionName,
+                        exists: false,
+                        status: "Session not found or has ended",
+                    };
+                }
+
+                // Get the last few lines of output from the session
+                const captureResult = await executeShellCommand(
+                    `tmux capture-pane -t "${sessionName}" -p | tail -50`
+                );
+
+                return {
+                    sessionName,
+                    exists: true,
+                    status: listResult.output,
+                    recentOutput: captureResult.output,
+                    attachCommand: `tmux attach-session -t ${sessionName}`,
+                };
+            } catch (error: any) {
+                return {
+                    sessionName,
+                    exists: false,
+                    error: error.message,
                 };
             }
         },
