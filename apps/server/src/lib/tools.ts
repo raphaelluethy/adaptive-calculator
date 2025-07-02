@@ -168,8 +168,12 @@ echo "Working directory: $(pwd)"
     echo $? > "${exitCodeFile}"
 }
 echo "\\nGemini finished with exit code: $(cat "${exitCodeFile}")"
-echo "Press Ctrl+C to close this session..."
-sleep infinity
+${
+    persistence
+        ? 'echo "Session is persistent and will remain alive. Press Ctrl+C to close this session..."'
+        : 'echo "Session will close automatically..."'
+}
+${persistence ? "sleep infinity" : 'exit $(cat "${exitCodeFile}")'}
             `;
 
             // Write wrapper script to temp file
