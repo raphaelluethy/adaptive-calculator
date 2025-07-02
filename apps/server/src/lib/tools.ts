@@ -92,24 +92,52 @@ export const aiTools = {
 
     executeGemini: tool({
         description:
-            "Execute the Gemini CLI to perform coding changes directly",
+            "Executes the Gemini CLI within a new, detached tmux session to perform coding changes. This is useful for long-running tasks. You can attach to the session to monitor progress.",
         parameters: z.object({
             command: z
                 .string()
                 .describe(
-                    "The query for the changes that gemini should apply. Do not add any flags to the command, only a plain string that describes the changes."
+                    "The query for the changes that Gemini should apply. Do not add any flags to the command, only a plain string that describes the changes."
+                ),
+            sessionName: z
+                .string()
+                .optional()
+                .describe(
+                    "An optional name for the tmux session. Defaults to 'gemini-session'."
                 ),
         }),
-        execute: async ({ command }) => {
-            const result = await executeShellCommand(
-                `gemini -y -p "${command}"`
+        execute: async ({ command, sessionName = "gemini-session" }) => {
+            // Sanitize sessionName to prevent command injection
+            const sanitizedSessionName = sessionName.replace(
+                /[^a-zA-Z0-9_-]/g,
+                ""
             );
-            return {
-                command,
-                output: result.output,
-                executionTimeMs: result.executionTimeMs,
-                exitCode: result.exitCode,
-            };
+            const geminiCommand = `gemini -y -p "${command}"`;
+            // Create a new detached tmux session with the specified name and command
+            const tmuxCommand = `tmux new-session -d -s ${sanitizedSessionName} '${geminiCommand}'`;
+
+            const result = await executeShellCommand(tmuxCommand);
+
+            if (result.exitCode === 0) {
+                return {
+                    command,
+                    sessionName: sanitizedSessionName,
+                    message: `Successfully started Gemini in a detached tmux session named '${sanitizedSessionName}'.`,
+                    attachCommand: `tmux attach-session -t ${sanitizedSessionName}`,
+                    executionTimeMs: result.executionTimeMs,
+                    exitCode: result.exitCode,
+                };
+            } else {
+                return {
+                    command,
+                    sessionName: sanitizedSessionName,
+                    message: `Failed to start Gemini in a tmux session.`,
+                    error: result.output || "Unknown error",
+                    executionTimeMs: result.executionTimeMs,
+                    output: result.output,
+                    exitCode: result.exitCode,
+                };
+            }
         },
     }),
 
