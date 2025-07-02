@@ -129,8 +129,14 @@ export const aiTools = {
                 .describe(
                     "Maximum time to wait for gemini to complete in milliseconds"
                 ),
+            workingDirectory: z
+                .string()
+                .optional()
+                .describe(
+                    "Optional working directory to run gemini from. Can be absolute path or relative (e.g., '../..' for 2 directories up)"
+                ),
         }),
-        execute: async ({ command, timeout }) => {
+        execute: async ({ command, timeout, workingDirectory }) => {
             const startTime = Date.now();
 
             // Generate unique session name and file paths
@@ -143,6 +149,15 @@ export const aiTools = {
                 `${sessionName}-exitcode.log`
             );
 
+            // Determine the actual working directory
+            let actualWorkingDir = process.cwd();
+            if (workingDirectory) {
+                actualWorkingDir = path.resolve(
+                    actualWorkingDir,
+                    workingDirectory
+                );
+            }
+
             // Create the gemini command with output redirection
             const geminiCommand = `gemini -y -p "${command.replace(
                 /"/g,
@@ -152,6 +167,8 @@ export const aiTools = {
             // Create a wrapper script that captures output and exit code
             const wrapperScript = `
 #!/bin/bash
+cd "${actualWorkingDir}"
+echo "Working directory: $(pwd)"
 {
     ${geminiCommand} 2>&1 | tee "${outputFile}"
     echo $? > "${exitCodeFile}"
@@ -254,6 +271,7 @@ sleep infinity
                         exitCode: -1,
                         error: `Gemini execution timed out after ${timeout}ms`,
                         sessionName,
+                        workingDirectory: actualWorkingDir,
                     };
                 }
 
@@ -264,6 +282,7 @@ sleep infinity
                     exitCode,
                     sessionName,
                     completed: true,
+                    workingDirectory: actualWorkingDir,
                 };
             } catch (error: any) {
                 const executionTimeMs = Date.now() - startTime;
@@ -285,6 +304,7 @@ sleep infinity
                     executionTimeMs,
                     exitCode: error.code || 1,
                     sessionName,
+                    workingDirectory: actualWorkingDir,
                 };
             }
         },

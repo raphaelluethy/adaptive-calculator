@@ -63,7 +63,11 @@ export const aiRouter = router({
                             description: aiTools.executeGemini.description,
                             parameters: aiTools.executeGemini.parameters,
                             execute: async (
-                                params: { command: string },
+                                params: {
+                                    command: string;
+                                    timeout: number;
+                                    workingDirectory?: string;
+                                },
                                 context: ToolExecutionOptions
                             ) => {
                                 toolsCalled.push("executeGemini");
