@@ -36,7 +36,7 @@ export default function ServerDrivenCalculator() {
                 selectedThemeFlag
         ) as keyof typeof themes) || "default";
 
-    console.log(sduiData);
+    
 
     return (
         <div>
