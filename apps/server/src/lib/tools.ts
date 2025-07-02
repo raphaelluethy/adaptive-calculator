@@ -129,14 +129,8 @@ export const aiTools = {
                 .describe(
                     "Maximum time to wait for gemini to complete in milliseconds"
                 ),
-            workingDirectory: z
-                .string()
-                .optional()
-                .describe(
-                    "Optional working directory to run gemini from. Can be absolute path or relative (e.g., '../..' for 2 directories up)"
-                ),
         }),
-        execute: async ({ command, timeout, workingDirectory }) => {
+        execute: async ({ command, timeout }) => {
             const startTime = Date.now();
 
             // Generate unique session name and file paths
@@ -150,13 +144,8 @@ export const aiTools = {
             );
 
             // Determine the actual working directory
-            let actualWorkingDir = process.cwd();
-            if (workingDirectory) {
-                actualWorkingDir = path.resolve(
-                    actualWorkingDir,
-                    workingDirectory
-                );
-            }
+            // Default to 2 levels up from server directory (calculator root)
+            let actualWorkingDir = path.resolve(process.cwd(), "../..");
 
             // Create the gemini command with output redirection
             const geminiCommand = `gemini -y -p "${command.replace(
@@ -184,8 +173,8 @@ sleep infinity
             const scriptFile = path.join(tmpDir, `${sessionName}-script.sh`);
             await fs.writeFile(scriptFile, wrapperScript, { mode: 0o755 });
 
-            // Create tmux session running the wrapper script
-            const tmuxCommand = `tmux new-session -d -s "${sessionName}" "bash ${scriptFile}"`;
+            // Create tmux session running the wrapper script in the specified directory
+            const tmuxCommand = `tmux new-session -d -s "${sessionName}" -c "${actualWorkingDir}" "bash ${scriptFile}"`;
 
             try {
                 await execAsync(tmuxCommand);
