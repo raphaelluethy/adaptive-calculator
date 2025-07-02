@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "shell-executor": {
-      "command": "node",
-      "args": ["/ABSOLUTE/PATH/TO/calculator/apps/mcp/build/index.js"]
-    }
-  }
-}

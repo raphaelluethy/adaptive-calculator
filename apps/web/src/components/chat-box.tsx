@@ -18,13 +18,17 @@ export function ChatBox() {
 
 	const chatMutation = useMutation(
 		trpc.ai.chat.mutationOptions({
-			onSuccess: (response: string) => {
+			onSuccess: (response: { text: string; toolsCalled: string[] }) => {
+				console.log("Tools called:", response.toolsCalled);
+				if (response.toolsCalled.includes("updateFeatureFlag")) {
+					flagsQuery.refetch();
+				}
 				setMessages((prev) => [
 					...prev,
 					{
 						id: `${Date.now().toString()}-ai`,
 						role: "assistant",
-						content: response,
+						content: response.text,
 					},
 				]);
 			},
