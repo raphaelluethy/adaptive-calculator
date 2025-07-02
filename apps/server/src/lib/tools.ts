@@ -129,8 +129,15 @@ export const aiTools = {
                 .describe(
                     "Maximum time to wait for gemini to complete in milliseconds"
                 ),
+            persistence: z
+                .boolean()
+                .optional()
+                .default(true)
+                .describe(
+                    "Whether to keep the tmux session open after completion for debugging purposes. Defaults to true."
+                ),
         }),
-        execute: async ({ command, timeout }) => {
+        execute: async ({ command, timeout, persistence }) => {
             const startTime = Date.now();
 
             // Generate unique session name and file paths
@@ -243,11 +250,17 @@ sleep infinity
                     // Ignore cleanup errors
                 }
 
-                // Kill the tmux session if it's still running
-                try {
-                    await execAsync(`tmux kill-session -t "${sessionName}"`);
-                } catch {
-                    // Session might already be gone
+                // Kill the tmux session if it's still running (unless persistence is enabled)
+                if (!persistence) {
+                    try {
+                        await execAsync(
+                            `tmux kill-session -t "${sessionName}"`
+                        );
+                    } catch {
+                        console.error(
+                            `Error killing tmux session: ${sessionName}. It might have already ended.`
+                        );
+                    }
                 }
 
                 const executionTimeMs = Date.now() - startTime;
@@ -261,6 +274,7 @@ sleep infinity
                         error: `Gemini execution timed out after ${timeout}ms`,
                         sessionName,
                         workingDirectory: actualWorkingDir,
+                        persistent: persistence,
                     };
                 }
 
@@ -272,6 +286,10 @@ sleep infinity
                     sessionName,
                     completed: true,
                     workingDirectory: actualWorkingDir,
+                    persistent: persistence,
+                    ...(persistence && {
+                        attachCommand: `tmux attach-session -t ${sessionName}`,
+                    }),
                 };
             } catch (error: any) {
                 const executionTimeMs = Date.now() - startTime;
@@ -281,7 +299,11 @@ sleep infinity
                     await fs.unlink(outputFile);
                     await fs.unlink(exitCodeFile);
                     await fs.unlink(scriptFile);
-                    await execAsync(`tmux kill-session -t "${sessionName}"`);
+                    if (!persistence) {
+                        await execAsync(
+                            `tmux kill-session -t "${sessionName}"`
+                        );
+                    }
                 } catch {
                     // Ignore cleanup errors
                 }

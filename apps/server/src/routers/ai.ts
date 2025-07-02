@@ -66,7 +66,7 @@ export const aiRouter = router({
                                 params: {
                                     command: string;
                                     timeout: number;
-                                    workingDirectory?: string;
+                                    persistence: boolean;
                                 },
                                 context: ToolExecutionOptions
                             ) => {
