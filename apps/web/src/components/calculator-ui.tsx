@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import ServerDrivenCalculator from "@/components/server-driven-calculator";
 import { featureFlags, getActiveTheme } from "@/config/feature-flags";
 import { useCalculator } from "@/hooks/use-calculator";
 import { trpc } from "@/utils/trpc";
@@ -137,16 +138,21 @@ function PostmodernCalculator({ display, handleButtonClick, ui }: {
 export function CalculatorUI() {
 	const { display, handleButtonClick } = useCalculator();
 	const theme = getActiveTheme();
-	const uiQuery = useQuery(trpc.calculator.getUI.queryOptions());
-	const flagsQuery = useQuery(trpc.featureFlags.get.queryOptions());
-	const ui = uiQuery.data;
-	if (!ui) {
-		return <div>Loading...</div>;
-	}
+       const uiQuery = useQuery(trpc.calculator.getUI.queryOptions());
+       const flagsQuery = useQuery(trpc.featureFlags.get.queryOptions());
+       const ui = uiQuery.data;
+       if (!ui) {
+               return <div>Loading...</div>;
+       }
 
-	const isPostmodernDesignEnabled = flagsQuery.data?.find(
-		(flag) => flag.flag === "calculator-postmodern",
-	)?.value;
+       const isSDUIEnabled = flagsQuery.data?.find((f) => f.flag === "sdui")?.value;
+       const isPostmodernDesignEnabled = flagsQuery.data?.find(
+               (flag) => flag.flag === "calculator-postmodern",
+       )?.value;
+
+       if (isSDUIEnabled) {
+               return <ServerDrivenCalculator />;
+       }
 
 	// Show postmodern design if enabled
 	if (isPostmodernDesignEnabled) {

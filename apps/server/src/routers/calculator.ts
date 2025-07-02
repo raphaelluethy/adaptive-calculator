@@ -36,8 +36,47 @@ export const calculatorRouter = router({
         { type: "button", label: "+", value: "+", className: "operator" },
         { type: "button", label: "0", value: "0", className: "col-span-2" },
         { type: "button", label: ".", value: ".", className: "" },
-        { type: "button", label: "=", value: "=", className: "equals" },
+      { type: "button", label: "=", value: "=", className: "equals" },
       ],
     };
   }),
+  getSDUI: publicProcedure
+    .output(
+      z.object({
+        buttons: z.array(
+          z.object({
+            label: z.string(),
+            value: z.string(),
+            kind: z.union([z.literal("number"), z.literal("operator"), z.literal("action")]),
+          }),
+        ),
+        buttonColor: z.string(),
+        operatorColor: z.string(),
+        textSize: z.string(),
+      }),
+    )
+    .query(() => {
+      return {
+        buttons: [
+          { label: "7", value: "7", kind: "number" },
+          { label: "8", value: "8", kind: "number" },
+          { label: "9", value: "9", kind: "number" },
+          { label: "/", value: "/", kind: "operator" },
+          { label: "4", value: "4", kind: "number" },
+          { label: "5", value: "5", kind: "number" },
+          { label: "6", value: "6", kind: "number" },
+          { label: "*", value: "*", kind: "operator" },
+          { label: "1", value: "1", kind: "number" },
+          { label: "2", value: "2", kind: "number" },
+          { label: "3", value: "3", kind: "number" },
+          { label: "-", value: "-", kind: "operator" },
+          { label: "0", value: "0", kind: "number" },
+          { label: "+", value: "+", kind: "operator" },
+          { label: "=", value: "=", kind: "action" },
+        ],
+        buttonColor: "bg-gray-200",
+        operatorColor: "bg-orange-400",
+        textSize: "text-xl",
+      };
+    }),
 });

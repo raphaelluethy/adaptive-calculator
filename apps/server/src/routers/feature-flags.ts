@@ -16,11 +16,16 @@ const defaultFeatureFlags = {
 		value: true,
 		excludes: ["calculator-postmodern"],
 	},
-	calculatorPostmodern: {
-		flag: "calculator-postmodern",
-		value: false,
-		excludes: ["calculator"],
-	},
+        calculatorPostmodern: {
+                flag: "calculator-postmodern",
+                value: false,
+                excludes: ["calculator"],
+        },
+        sdui: {
+                flag: "sdui",
+                value: false,
+                excludes: [],
+        },
 };
 
 export const featureFlagsRouter = router({
