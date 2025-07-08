@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { featureFlagExcludes, featureFlags } from "@/db/schema/feature-flags";
-import { publicProcedure, router, t } from "@/lib/trpc";
+import { publicProcedure, router } from "@/lib/trpc";
 
 export const defaultFeatureFlags = {
 	chatBox: {

@@ -60,6 +60,7 @@ export const logsRouter = router({
 
 				return { sessionId };
 			} catch (error) {
+				console.error(error);
 				throw new TRPCError({
 					code: "INTERNAL_SERVER_ERROR",
 					message: "Failed to create log",
@@ -100,6 +101,13 @@ export const logsRouter = router({
 				)
 				.orderBy(desc(logs.date))
 				.limit(1000);
+			console.log({
+				mousePositions: mousePositions.map((log) => ({
+					id: log.id,
+					timestamp: log.date,
+					...JSON.parse(log.data as string),
+				})),
+			});
 
 			return mousePositions.map((log) => ({
 				id: log.id,

@@ -1,1 +1,0 @@
-ALTER TABLE `feature_flags` ADD `type` text NOT NULL;

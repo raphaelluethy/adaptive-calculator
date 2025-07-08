@@ -10,10 +10,10 @@ export const logSessions = sqliteTable("log_sessions", {
 	userId: text("user_id").references(() => user.id),
 	createdAt: integer("created_at", { mode: "timestamp" })
 		.notNull()
-		.default(sql`CURRENT_TIMESTAMP`),
+		.default(sql`(unixepoch())`),
 	updatedAt: integer("updated_at", { mode: "timestamp" })
 		.notNull()
-		.default(sql`CURRENT_TIMESTAMP`),
+		.default(sql`(unixepoch())`),
 });
 
 export const logs = sqliteTable("logs", {
@@ -25,7 +25,7 @@ export const logs = sqliteTable("logs", {
 		.references(() => logSessions.id),
 	date: integer("date", { mode: "timestamp" })
 		.notNull()
-		.default(sql`CURRENT_TIMESTAMP`),
+		.default(sql`(unixepoch())`),
 	type: text("type", {
 		enum: ["new-page", "mouse-position", "clicked"],
 	}).notNull(),

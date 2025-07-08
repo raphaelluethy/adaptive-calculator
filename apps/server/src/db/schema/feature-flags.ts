@@ -10,10 +10,10 @@ export const featureFlags = sqliteTable("feature_flags", {
 	value: integer("value", { mode: "boolean" }).notNull(),
 	createdAt: integer("created_at", { mode: "timestamp" })
 		.notNull()
-		.default(sql`CURRENT_TIMESTAMP`),
+		.default(sql`(unixepoch())`),
 	updatedAt: integer("updated_at", { mode: "timestamp" })
 		.notNull()
-		.default(sql`CURRENT_TIMESTAMP`),
+		.default(sql`(unixepoch())`),
 	type: text("type", {
 		enum: ["theme", "ui", "functionality", "other"],
 	}).notNull(),
@@ -31,10 +31,10 @@ export const featureFlagExcludes = sqliteTable("feature_flag_excludes", {
 		.notNull(),
 	createdAt: integer("created_at", { mode: "timestamp" })
 		.notNull()
-		.default(sql`CURRENT_TIMESTAMP`),
+		.default(sql`(unixepoch())`),
 	updatedAt: integer("updated_at", { mode: "timestamp" })
 		.notNull()
-		.default(sql`CURRENT_TIMESTAMP`),
+		.default(sql`(unixepoch())`),
 });
 
 export type SchemaFeatureFlag = typeof featureFlags.$inferSelect;
