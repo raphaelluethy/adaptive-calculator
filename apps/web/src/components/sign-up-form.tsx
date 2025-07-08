@@ -2,6 +2,8 @@ import { authClient } from "@/lib/auth-client";
 import { useForm } from "@tanstack/react-form";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { trpc } from "@/utils/trpc";
+import { LOG_SESSION_KEY } from "@/lib/loggers";
 import z from "zod/v4";
 import Loader from "./loader";
 import { Button } from "./ui/button";
@@ -16,7 +18,8 @@ export default function SignUpForm({
 	const navigate = useNavigate({
 		from: "/",
 	});
-	const { isPending } = authClient.useSession();
+        const { isPending } = authClient.useSession();
+        const createSession = trpc.logs.createSession.useMutation();
 
 	const form = useForm({
 		defaultValues: {
@@ -32,12 +35,20 @@ export default function SignUpForm({
 					name: value.name,
 				},
 				{
-					onSuccess: () => {
-						navigate({
-							to: "/dashboard",
-						});
-						toast.success("Sign up successful");
-					},
+                                        onSuccess: () => {
+                                                createSession.mutate(undefined, {
+                                                        onSuccess: (data) => {
+                                                                localStorage.setItem(
+                                                                        LOG_SESSION_KEY,
+                                                                        data.id,
+                                                                );
+                                                        },
+                                                });
+                                                navigate({
+                                                        to: "/dashboard",
+                                                });
+                                                toast.success("Sign up successful");
+                                        },
 					onError: (error) => {
 						toast.error(error.error.message);
 					},

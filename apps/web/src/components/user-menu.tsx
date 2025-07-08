@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
 import { useNavigate } from "@tanstack/react-router";
+import { LOG_SESSION_KEY } from "@/lib/loggers";
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 import { Link } from "@tanstack/react-router";
@@ -42,6 +43,7 @@ export default function UserMenu() {
             variant="destructive"
             className="w-full"
             onClick={() => {
+              localStorage.removeItem(LOG_SESSION_KEY);
               authClient.signOut({
                 fetchOptions: {
                   onSuccess: () => {

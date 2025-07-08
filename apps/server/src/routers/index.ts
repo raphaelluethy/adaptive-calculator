@@ -2,6 +2,7 @@ import { protectedProcedure, publicProcedure, router } from "../lib/trpc";
 import { aiRouter } from "./ai";
 import { calculatorRouter } from "./calculator";
 import { featureFlagsRouter } from "./feature-flags";
+import { logsRouter } from "./logs";
 
 export const appRouter = router({
 	healthCheck: publicProcedure.query(() => {
@@ -13,8 +14,9 @@ export const appRouter = router({
 			user: ctx.session.user,
 		};
 	}),
-	calculator: calculatorRouter,
-	ai: aiRouter,
-	featureFlags: featureFlagsRouter,
+        calculator: calculatorRouter,
+        ai: aiRouter,
+        featureFlags: featureFlagsRouter,
+        logs: logsRouter,
 });
 export type AppRouter = typeof appRouter;

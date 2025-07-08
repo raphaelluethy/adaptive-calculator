@@ -2,6 +2,8 @@ import { authClient } from "@/lib/auth-client";
 import { useForm } from "@tanstack/react-form";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { trpc } from "@/utils/trpc";
+import { LOG_SESSION_KEY } from "@/lib/loggers";
 import z from "zod/v4";
 import Loader from "./loader";
 import { Button } from "./ui/button";
@@ -18,24 +20,34 @@ export default function SignInForm({
 	});
 	const { isPending } = authClient.useSession();
 
-	const form = useForm({
-		defaultValues: {
-			email: "",
-			password: "",
-		},
-		onSubmit: async ({ value }) => {
-			await authClient.signIn.email(
-				{
-					email: value.email,
-					password: value.password,
-				},
-				{
-					onSuccess: () => {
-						navigate({
-							to: "/dashboard",
-						});
-						toast.success("Sign in successful");
-					},
+        const createSession = trpc.logs.createSession.useMutation();
+
+        const form = useForm({
+                defaultValues: {
+                        email: "",
+                        password: "",
+                },
+                onSubmit: async ({ value }) => {
+                        await authClient.signIn.email(
+                                {
+                                        email: value.email,
+                                        password: value.password,
+                                },
+                                {
+                                        onSuccess: () => {
+                                                createSession.mutate(undefined, {
+                                                        onSuccess: (data) => {
+                                                                localStorage.setItem(
+                                                                        LOG_SESSION_KEY,
+                                                                        data.id,
+                                                                );
+                                                        },
+                                                });
+                                                navigate({
+                                                        to: "/dashboard",
+                                                });
+                                                toast.success("Sign in successful");
+                                        },
 					onError: (error) => {
 						toast.error(error.error.message);
 					},
