@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { logSessions, logs } from "@/db/schema/logs";
@@ -16,6 +16,7 @@ export const logsRouter = router({
 				.returning({ id: logSessions.id });
 			return { id: session.id };
 		} catch (error) {
+			console.error(error);
 			throw new TRPCError({
 				code: "INTERNAL_SERVER_ERROR",
 				message: "Failed to create session",
@@ -65,4 +66,91 @@ export const logsRouter = router({
 				});
 			}
 		}),
+	getMousePositions: protectedProcedure.query(async ({ ctx }) => {
+		try {
+			if (!ctx.session.user.id) {
+				throw new TRPCError({
+					code: "UNAUTHORIZED",
+					message: "User not logged in",
+				});
+			}
+			const userSessions = await db
+				.select({ id: logSessions.id })
+				.from(logSessions)
+				.where(eq(logSessions.userId, ctx.session.user.id));
+
+			const sessionIds = userSessions.map((s) => s.id);
+
+			if (sessionIds.length === 0) {
+				return [];
+			}
+
+			const mousePositions = await db
+				.select({
+					id: logs.id,
+					date: logs.date,
+					data: logs.data,
+				})
+				.from(logs)
+				.where(
+					and(
+						eq(logs.type, "mouse-position"),
+						inArray(logs.sessionId, sessionIds),
+					),
+				)
+				.orderBy(desc(logs.date))
+				.limit(1000);
+
+			return mousePositions.map((log) => ({
+				id: log.id,
+				timestamp: log.date,
+				...JSON.parse(log.data as string),
+			}));
+		} catch (error) {
+			console.error(error);
+			throw new TRPCError({
+				code: "INTERNAL_SERVER_ERROR",
+				message: "Failed to fetch mouse positions",
+			});
+		}
+	}),
+	getClickEvents: protectedProcedure.query(async ({ ctx }) => {
+		try {
+			const userSessions = await db
+				.select({ id: logSessions.id })
+				.from(logSessions)
+				.where(eq(logSessions.userId, ctx.session.user.id));
+
+			const sessionIds = userSessions.map((s) => s.id);
+
+			if (sessionIds.length === 0) {
+				return [];
+			}
+
+			const clickEvents = await db
+				.select({
+					id: logs.id,
+					date: logs.date,
+					data: logs.data,
+				})
+				.from(logs)
+				.where(
+					and(eq(logs.type, "clicked"), inArray(logs.sessionId, sessionIds)),
+				)
+				.orderBy(desc(logs.date))
+				.limit(500);
+
+			return clickEvents.map((log) => ({
+				id: log.id,
+				timestamp: log.date,
+				...JSON.parse(log.data as string),
+			}));
+		} catch (error) {
+			console.error(error);
+			throw new TRPCError({
+				code: "INTERNAL_SERVER_ERROR",
+				message: "Failed to fetch click events",
+			});
+		}
+	}),
 });

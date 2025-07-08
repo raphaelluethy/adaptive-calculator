@@ -14,9 +14,9 @@ export const appRouter = router({
 			user: ctx.session.user,
 		};
 	}),
-        calculator: calculatorRouter,
-        ai: aiRouter,
-        featureFlags: featureFlagsRouter,
-        logs: logsRouter,
+	calculator: calculatorRouter,
+	ai: aiRouter,
+	featureFlags: featureFlagsRouter,
+	logs: logsRouter,
 });
 export type AppRouter = typeof appRouter;
