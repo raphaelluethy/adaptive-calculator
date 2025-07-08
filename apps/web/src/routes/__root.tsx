@@ -12,6 +12,12 @@ import Loader from "@/components/loader";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import type { trpc } from "@/utils/trpc";
+import {
+	LogSessionInitializer,
+	MousePositionLogger,
+	ClickLogger,
+	PageLogger,
+} from "@/lib/loggers";
 import "../index.css";
 
 export interface RouterAppContext {
@@ -49,6 +55,10 @@ function RootComponent() {
 		<>
 			<HeadContent />
 			<ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+				<LogSessionInitializer />
+				<MousePositionLogger />
+				<ClickLogger />
+				<PageLogger />
 				<div className="grid grid-rows-[auto_1fr] h-svh">
 					<Header />
 					{isFetching ? <Loader /> : <Outlet />}

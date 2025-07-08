@@ -78,10 +78,11 @@ export function ChatBox() {
 				{messages.map((m) => (
 					<div key={m.id} className="text-sm">
 						<div
-							className={`p-2 rounded ${m.role === "user"
-								? "bg-blue-100 dark:bg-blue-900 ml-4"
-								: "bg-gray-100 dark:bg-gray-800 mr-4"
-								}`}
+							className={`p-2 rounded ${
+								m.role === "user"
+									? "bg-blue-100 dark:bg-blue-900 ml-4"
+									: "bg-gray-100 dark:bg-gray-800 mr-4"
+							}`}
 						>
 							<strong className="text-xs text-gray-700 dark:text-gray-300">
 								{m.role === "user" ? "You" : "AI"}:

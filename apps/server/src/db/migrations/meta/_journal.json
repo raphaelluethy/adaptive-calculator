@@ -5,50 +5,8 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1751409924371,
-      "tag": "0000_absurd_red_wolf",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "6",
-      "when": 1751410443448,
-      "tag": "0001_woozy_excalibur",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "6",
-      "when": 1751410484523,
-      "tag": "0002_minor_serpent_society",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1751410558807,
-      "tag": "0003_glossy_bastion",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "6",
-      "when": 1751412668661,
-      "tag": "0004_dark_stature",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "6",
-      "when": 1751412936757,
-      "tag": "0005_fancy_loa",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "6",
-      "when": 1751447956217,
-      "tag": "0006_military_leech",
+      "when": 1751997207885,
+      "tag": "0000_silly_nightmare",
       "breakpoints": true
     }
   ]

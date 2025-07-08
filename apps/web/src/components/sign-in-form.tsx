@@ -1,7 +1,10 @@
 import { authClient } from "@/lib/auth-client";
 import { useForm } from "@tanstack/react-form";
 import { useNavigate } from "@tanstack/react-router";
+import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { trpc } from "@/utils/trpc";
+import { LOG_SESSION_KEY } from "@/lib/loggers";
 import z from "zod/v4";
 import Loader from "./loader";
 import { Button } from "./ui/button";
@@ -18,6 +21,8 @@ export default function SignInForm({
 	});
 	const { isPending } = authClient.useSession();
 
+	const createSession = useMutation(trpc.logs.createSession.mutationOptions());
+
 	const form = useForm({
 		defaultValues: {
 			email: "",
@@ -31,6 +36,12 @@ export default function SignInForm({
 				},
 				{
 					onSuccess: () => {
+						createSession.mutate(undefined, {
+							onSuccess: (data) => {
+								const { id } = data as { id: string };
+								localStorage.setItem(LOG_SESSION_KEY, id);
+							},
+						});
 						navigate({
 							to: "/dashboard",
 						});
