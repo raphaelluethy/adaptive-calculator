@@ -101,13 +101,6 @@ export const logsRouter = router({
 				)
 				.orderBy(desc(logs.date))
 				.limit(1000);
-			console.log({
-				mousePositions: mousePositions.map((log) => ({
-					id: log.id,
-					timestamp: log.date,
-					...JSON.parse(log.data as string),
-				})),
-			});
 
 			return mousePositions.map((log) => ({
 				id: log.id,
