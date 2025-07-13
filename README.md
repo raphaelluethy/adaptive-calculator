@@ -1,80 +1,54 @@
 # Calculator
 
-A modern, feature-rich calculator application built with a full-stack TypeScript architecture. This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack) and includes advanced features like AI-powered calculations, feature flags, and multiple UI themes.
+> **Note:**  
+> This project is a prototype developed for my IP7b project as part of my MSE at FHNW.  
+> The code is not production-ready and should not be used as such.
 
-## Tech Stack
+Calculator is a modern, full-stack web application that goes beyond basic arithmetic. It offers a fast, intuitive calculator interface with advanced features such as AI-powered calculations, user authentication, feature flags, and multiple UI themes. The app is designed for both everyday users and power users who want more from their calculator, including analytics and customization.
 
-- **Frontend**: React 19, TanStack Router, TailwindCSS v4, shadcn/ui
-- **Backend**: Hono, tRPC, Node.js
-- **Database**: Drizzle ORM with LibSQL/Turso
-- **Authentication**: Better Auth
-- **Build System**: Turborepo with pnpm workspaces
-- **Language**: TypeScript with strict mode
-- **Styling**: Tailwind CSS utility classes
-- **AI Integration**: Google AI SDK for enhanced calculator features
+## Features
+
+- **Standard and advanced calculations**: Perform basic arithmetic as well as more complex operations.
+- **AI-powered assistance**: Get help with calculations, explanations, and suggestions using integrated AI.
+- **User accounts**: Sign up and sign in to save preferences and access personalized features.
+- **Feature flags**: Try out experimental features as they become available.
+- **Multiple themes**: Switch between light, dark, and custom themes for the best experience.
+- **Analytics**: Track usage and get insights (for users and developers).
 
 ## Getting Started
 
-First, install the dependencies:
+1. **Install dependencies:**
+   ```bash
+   pnpm install
+   ```
 
-```bash
-pnpm install
-```
-## Database Setup
+2. **Set up the database:**
+   ```bash
+   cd apps/server
+   pnpm db:local
+   # Update .env if needed
+   pnpm db:push
+   ```
 
-This project uses SQLite with Drizzle ORM.
-
-1. Start the local SQLite database:
-```bash
-cd apps/server && pnpm db:local
-```
-
-
-2. Update your `.env` file in the `apps/server` directory with the appropriate connection details if needed.
-
-3. Apply the schema to your database:
-```bash
-pnpm db:push
-```
-
-
-Then, run the development server:
-
-```bash
-pnpm dev
-```
-
-Open [http://localhost:3001](http://localhost:3001) in your browser to see the web application.
-The API is running at [http://localhost:3000](http://localhost:3000).
-
-
+3. **Start the app:**
+   ```bash
+   pnpm dev
+   ```
+   - Web app: [http://localhost:3001](http://localhost:3001)
+   - API: [http://localhost:3000](http://localhost:3000)
 
 ## Project Structure
 
 ```
 calculator/
 ├── apps/
-│   ├── web/         # Frontend application (React + TanStack Router)
-│   └── server/      # Backend API (Hono, TRPC)
+│   ├── web/      # Frontend (React)
+│   └── server/   # Backend (API, database)
 ```
 
-## Available Scripts
+## Essential Commands
 
-### Development
-- `pnpm dev`: Start all applications in development mode
-- `pnpm dev:web`: Start only the web application (port 3001)
-- `pnpm dev:server`: Start only the server (port 3000)
-
-### Build & Type Checking
-- `pnpm build`: Build all applications
-- `pnpm check-types`: Check TypeScript types across all apps
-
-### Database Commands
-- `pnpm db:push`: Push schema changes to database
-- `pnpm db:studio`: Open database studio UI
-- `pnpm db:generate`: Generate database migrations
-- `pnpm db:migrate`: Run database migrations
-- `cd apps/server && pnpm db:local`: Start the local SQLite database
-
-### Individual Package Commands
-- `turbo -F <package> <command>`: Run commands for specific packages (e.g., `turbo -F web build`)
+- `pnpm dev` — Start all services in development mode
+- `pnpm build` — Build all packages
+- `pnpm check-types` — Type check all packages
+- `pnpm db:push` — Push database schema changes
