@@ -2,20 +2,12 @@
 
 > **Note:**  
 > This project is a prototype developed for my IP7b project as part of my MSE at FHNW.  
-> The code is not production-ready and should not be used as such.
+> The code is not production-ready and should not be used as such
 
-Calculator is a modern, full-stack web application that goes beyond basic arithmetic. It offers a fast, intuitive calculator interface with advanced features such as AI-powered calculations, user authentication, feature flags, and multiple UI themes. The app is designed for both everyday users and power users who want more from their calculator, including analytics and customization.
+POC for adaptive UI interfaces using FeatureFlags, Server Driven UI and a Coding agent based approach.
+Also has a chatbox to enable/disable stuff.
 
-## Features
-
-- **Standard and advanced calculations**: Perform basic arithmetic as well as more complex operations.
-- **AI-powered assistance**: Get help with calculations, explanations, and suggestions using integrated AI.
-- **User accounts**: Sign up and sign in to save preferences and access personalized features.
-- **Feature flags**: Try out experimental features as they become available.
-- **Multiple themes**: Switch between light, dark, and custom themes for the best experience.
-- **Analytics**: Track usage and get insights (for users and developers).
-
-## Getting Started
+## Gettong started
 
 1. **Install dependencies:**
    ```bash
