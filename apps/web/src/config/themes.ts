@@ -52,6 +52,14 @@ export const themes = {
 		operatorButton: "bg-green-400 hover:bg-green-500 text-white",
 		equalsButton: "bg-green-500 hover:bg-green-600 text-white",
 	},
+	sunset: {
+		flag: "sunset-theme",
+		calculator: "bg-gradient-to-br from-orange-100 to-red-100 text-orange-900",
+		display: "bg-gradient-to-r from-orange-200 to-red-200 text-orange-900",
+		button: "bg-orange-300 hover:bg-orange-400 text-orange-900",
+		operatorButton: "bg-orange-500 hover:bg-orange-600 text-white",
+		equalsButton: "bg-red-500 hover:bg-red-600 text-white",
+	},
 };
 
 export type Theme = keyof typeof themes;

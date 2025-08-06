@@ -1,10 +1,10 @@
+import { useQuery } from "@tanstack/react-query";
 import ServerDrivenCalculator from "@/components/server-driven-calculator";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { themes } from "@/config/themes";
 import { useCalculator } from "@/hooks/use-calculator";
 import { trpc } from "@/utils/trpc";
-import { useQuery } from "@tanstack/react-query";
 
 export function CalculatorUI() {
     const { display, handleButtonClick } = useCalculator();
