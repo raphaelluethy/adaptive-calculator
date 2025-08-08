@@ -7,14 +7,21 @@
 POC for adaptive UI interfaces using FeatureFlags, Server Driven UI and a Coding agent based approach.
 Also has a chatbox to enable/disable stuff.
 
-## Gettong started
+## Getting started
 
 1. **Install dependencies:**
    ```bash
    pnpm install
    ```
 
-2. **Set up the database:**
+2. **Create environment files:**
+   ```bash
+   cp apps/server/.env.example apps/server/.env
+   cp apps/web/.env.example apps/web/.env
+   ```
+   Update the values as needed (e.g., `VITE_SERVER_URL`, `CORS_ORIGIN`, `DATABASE_URL`).
+
+3. **Set up the database:**
    ```bash
    cd apps/server
    pnpm db:local
@@ -22,7 +29,7 @@ Also has a chatbox to enable/disable stuff.
    pnpm db:push
    ```
 
-3. **Start the app:**
+4. **Start the app:**
    ```bash
    pnpm dev
    ```
