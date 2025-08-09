@@ -1,11 +1,12 @@
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { generateText, type ToolExecutionOptions } from "ai";
-import { z } from "zod";
-import { aiTools } from "@/lib/tools";
+import { env } from "@/lib/env";
 import { publicProcedure, router } from "@/lib/trpc";
+import { aiTools } from "@/tools";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { type ModelMessage, generateText, stepCountIs } from "ai";
+import { z } from "zod";
 
 const google = createGoogleGenerativeAI({
-	apiKey: process.env.GOOGLE_API_KEY,
+	apiKey: env.GOOGLE_API_KEY || undefined,
 });
 
 export const aiRouter = router({
@@ -25,57 +26,30 @@ export const aiRouter = router({
 				const { messages } = input;
 				const toolsCalled: string[] = [];
 
+				// Convert incoming chat messages to ModelMessage format
+				const modelMessages: ModelMessage[] = messages.map((m) => ({
+					role: m.role,
+					content: [{ type: "text", text: m.content }],
+				}));
+
 				const result = await generateText({
 					model: google("gemini-2.5-flash"),
-					messages,
-					maxSteps: 3,
+					messages: modelMessages,
+					stopWhen: stepCountIs(3),
 					tools: {
-						executeShellCommand: {
-							description: aiTools.executeShellCommand.description,
-							parameters: aiTools.executeShellCommand.parameters,
-							execute: async (
-								params: { command: string },
-								context: ToolExecutionOptions,
-							) => {
-								toolsCalled.push("executeShellCommand");
-								return await aiTools.executeShellCommand.execute(
-									params,
-									context,
-								);
-							},
-						},
-						updateFeatureFlag: {
-							description: aiTools.updateFeatureFlag.description,
-							parameters: aiTools.updateFeatureFlag.parameters,
-							execute: async (
-								params: { flagName: string; enabled: boolean },
-								context: ToolExecutionOptions,
-							) => {
-								toolsCalled.push("updateFeatureFlag");
-								return await aiTools.updateFeatureFlag.execute(params, context);
-							},
-						},
-						executeGemini: {
-							description: aiTools.executeGemini.description,
-							parameters: aiTools.executeGemini.parameters,
-							execute: async (
-								params: {
-									command: string;
-									timeout: number;
-								},
-								context: ToolExecutionOptions,
-							) => {
-								toolsCalled.push("executeGemini");
-								return await aiTools.executeGemini.execute(params, context);
-							},
-						},
+						executeShellCommand: aiTools.executeShellCommand,
+						updateFeatureFlag: aiTools.updateFeatureFlag,
+						executeGemini: aiTools.executeGemini,
+					},
+					onStepFinish: (step) => {
+						for (const toolCall of step.toolCalls) {
+							// Record tool usage; support both static and dynamic tools
+							toolsCalled.push(toolCall.toolName);
+						}
 					},
 				});
 
-				return {
-					text: result.text,
-					toolsCalled,
-				};
+				return { text: result.text, toolsCalled };
 			} catch (error) {
 				console.error("Error in ai.chat:", error);
 				throw error;
