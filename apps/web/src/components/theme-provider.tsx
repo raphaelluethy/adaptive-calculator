@@ -42,7 +42,7 @@ export function ThemeProvider({
 				: "light";
 
 			root.classList.add(systemTheme);
-			
+
 			// Listen for system theme changes
 			const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 			const handleChange = () => {
@@ -50,7 +50,7 @@ export function ThemeProvider({
 				const newSystemTheme = mediaQuery.matches ? "dark" : "light";
 				root.classList.add(newSystemTheme);
 			};
-			
+
 			mediaQuery.addEventListener("change", handleChange);
 			return () => mediaQuery.removeEventListener("change", handleChange);
 		}

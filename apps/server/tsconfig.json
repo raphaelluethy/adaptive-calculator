@@ -8,17 +8,11 @@
 		"skipLibCheck": true,
 		"baseUrl": "./",
 		"paths": {
-			"@/*": [
-				"./src/*"
-			],
-			"@/tools": [
-				"./src/tools/index.ts"
-			]
+			"@/*": ["./src/*"],
+			"@/tools": ["./src/tools/index.ts"]
 		},
 		"outDir": "./dist",
-		"types": [
-			"node"
-		],
+		"types": ["node"],
 		"composite": true,
 		"jsx": "react-jsx",
 		"jsxImportSource": "hono/jsx"

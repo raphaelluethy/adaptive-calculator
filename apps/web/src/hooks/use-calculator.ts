@@ -60,6 +60,9 @@ export function useCalculator() {
 				setOperator(null);
 				setWaitingForSecondOperand(false);
 				break;
+			case "DEL":
+				setDisplay((prev) => prev.slice(0, -1) || "0");
+				break;
 			case "+/-":
 				if (featureFlags?.find((f) => f.flag === "negative-numbers")?.value) {
 					setDisplay((prev) => (parseFloat(prev) * -1).toString());

@@ -1,68 +1,70 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/utils/trpc";
 
-interface ChatMessage {
-	id: string;
-	role: "user" | "assistant";
-	content: string;
-}
-
 export function ChatBox() {
 	const flagsQuery = useQuery(trpc.featureFlags.get.queryOptions());
 
-	const [messages, setMessages] = useState<ChatMessage[]>([]);
-	const [input, setInput] = useState("");
+	const apiEndpoint = useMemo(() => {
+		const base = (import.meta as any).env?.VITE_SERVER_URL ?? "http://localhost:3000";
+		return `${base}/api/chat` as string;
+	}, []);
 
-	const chatMutation = useMutation(
-		trpc.ai.chat.mutationOptions({
-			onSuccess: (response: { text: string; toolsCalled: string[] }) => {
-				console.log("Tools called:", response.toolsCalled);
-				if (response.toolsCalled.includes("updateFeatureFlag")) {
-					flagsQuery.refetch();
-				}
-				setMessages((prev) => [
-					...prev,
-					{
-						id: `${Date.now().toString()}-ai`,
-						role: "assistant",
-						content: response.text,
-					},
-				]);
-			},
-		}),
-	);
+	const { messages, sendMessage, setMessages } = useChat({
+		transport: new DefaultChatTransport({ api: apiEndpoint }),
+	});
+
+	const [input, setInput] = useState("");
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!input.trim()) return;
-
-		// Add user message to chat
-		const userMessage: ChatMessage = {
-			id: `${Date.now().toString()}-user`,
-			role: "user",
-			content: input,
-		};
-		setMessages((prev) => [...prev, userMessage]);
-
-		// Convert messages to the format expected by the AI SDK
-		const aiMessages = [...messages, userMessage].map((msg) => ({
-			role: msg.role,
-			content: msg.content,
-		}));
-
-		// Send to AI
-		chatMutation.mutate({ messages: aiMessages });
-
-		// Clear input
+	sendMessage({ text: input });
 		setInput("");
 	};
 
-	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		setInput(e.target.value);
-	};
+	// When the updateFeatureFlag tool finishes, refresh feature flags
+	const processedToolResultsRef = useRef<Set<string>>(new Set());
+	useEffect(() => {
+		for (const m of messages as any[]) {
+			for (const part of (m.parts ?? []) as any[]) {
+				if (
+					typeof part.type === "string" &&
+					part.type === "tool-updateFeatureFlag" &&
+					part.state === "output-available" &&
+					!processedToolResultsRef.current.has(part.toolCallId)
+				) {
+					processedToolResultsRef.current.add(part.toolCallId);
+					flagsQuery.refetch();
+					// Append a clear assistant message summarizing the change
+					const output = part.output as {
+						flagName: string;
+						enabled: boolean;
+						success: boolean;
+						data?: { flag: string; value: boolean };
+						error?: string;
+					};
+					const finalFlag = output?.data?.flag ?? output?.flagName;
+					const finalValue = output?.data?.value ?? output?.enabled;
+					const summary = output?.success
+						? `Change applied: feature flag "${finalFlag}" set to ${finalValue ? "enabled" : "disabled"}.`
+						: `Change failed: could not update feature flag "${finalFlag}" (${output?.error ?? "unknown error"}).`;
+					setMessages((prev: any[]) => [
+						...prev,
+						{
+							id: `change-${String(part.toolCallId ?? Date.now())}`,
+							role: "assistant",
+							parts: [{ type: "text", text: summary }],
+						},
+					]);
+				}
+			}
+		}
+	}, [messages, flagsQuery]);
 
 	const isChatBoxEnabled = flagsQuery.data?.find(
 		(flag) => flag.flag === "chat-box",
@@ -75,7 +77,7 @@ export function ChatBox() {
 	return (
 		<div className="h-full flex flex-col">
 			<div className="flex-1 overflow-y-auto mb-4 space-y-2">
-				{messages.map((m) => (
+				{(messages as any[]).map((m) => (
 					<div key={m.id} className="text-sm">
 						<div
 							className={`p-2 rounded ${
@@ -87,21 +89,55 @@ export function ChatBox() {
 							<strong className="text-xs text-gray-700 dark:text-gray-300">
 								{m.role === "user" ? "You" : "AI"}:
 							</strong>
-							<div className="mt-1 text-gray-800 dark:text-gray-100">
-								{m.content}
+							<div className="mt-1 text-gray-800 dark:text-gray-100 space-y-1">
+							{((m as any).parts ?? []).map((part: any, idx: number) => {
+									if (part.type === "text") {
+										return <div key={idx}>{part.text}</div>;
+									}
+									if (typeof part.type === "string" && part.type.startsWith("tool-")) {
+										const toolName = part.type.replace(/^tool-/, "");
+										const callId = part.toolCallId as string | undefined;
+										switch (part.state) {
+											case "input-streaming":
+												return (
+													<div key={idx} className="text-xs text-gray-600">
+														Calling {toolName}…
+													</div>
+												);
+											case "input-available":
+												return (
+													<div key={idx} className="text-xs text-gray-600">
+														{toolName} args: {JSON.stringify(part.input)}
+													</div>
+												);
+											case "output-available":
+												return (
+													<div key={idx} className="text-xs text-gray-600">
+														{toolName} result: {JSON.stringify(part.output)}
+														{callId ? ` (id: ${callId})` : null}
+													</div>
+												);
+											case "output-error":
+												return (
+													<div key={idx} className="text-xs text-red-600">
+														{toolName} error: {String(part.errorText ?? "Unknown error")}
+													</div>
+												);
+										}
+									}
+									return null;
+								})}
 							</div>
 						</div>
 					</div>
 				))}
-				{chatMutation.isPending && (
+				{false && (
 					<div className="text-sm">
 						<div className="p-2 rounded bg-gray-100 dark:bg-gray-800 mr-4">
 							<strong className="text-xs text-gray-700 dark:text-gray-300">
 								AI:
 							</strong>
-							<div className="mt-1 text-gray-800 dark:text-gray-100">
-								Thinking...
-							</div>
+							<div className="mt-1 text-gray-800 dark:text-gray-100">Thinking...</div>
 						</div>
 					</div>
 				)}
@@ -111,16 +147,11 @@ export function ChatBox() {
 				<Input
 					value={input}
 					placeholder="Say something..."
-					onChange={handleInputChange}
+					onChange={(e) => setInput(e.target.value)}
 					className="flex-1"
-					disabled={chatMutation.isPending}
 				/>
-				<Button
-					type="submit"
-					size="sm"
-					disabled={chatMutation.isPending || !input.trim()}
-				>
-					{chatMutation.isPending ? "Sending..." : "Send"}
+				<Button type="submit" size="sm" disabled={!input.trim()}>
+					Send
 				</Button>
 			</form>
 		</div>
