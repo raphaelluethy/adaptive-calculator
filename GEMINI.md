@@ -94,4 +94,4 @@ The project is structured as a monorepo with two main applications:
 *   **ATTENTION:** You are not allowed to run pnpm run dev at any time without explicit permission.
 *   **NEVER use build or dev commands** unless explicitly instructed (pnpm build, pnpm dev, turbo build, turbo dev)
 *   **DONT USE THE CREATE DB TOOL OR THE DATABASE STUDIO OR THE DATABASE CLI**
-* **Theme Creation:** If you are asked to create a theme, this always relates to a Calculator theme. Do not touch the files index.css, theme-provider.tsx and mode-toggle.tsx!
+* **Theme Creation:** If you are asked to create a theme, this always relates to a Calculator theme. Do not touch the files index.css, theme-provider.tsx and mode-toggle.tsx! Also do NOT create any .sql or migration files.
