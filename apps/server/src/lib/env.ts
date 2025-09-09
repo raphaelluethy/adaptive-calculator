@@ -11,6 +11,7 @@ const envSchema = z.object({
 	BETTER_AUTH_SECRET: z.string().default(""),
 	BETTER_AUTH_URL: z.string().default(""),
 	GOOGLE_API_KEY: z.string().default(""),
+	OPENROUTER_API_KEY: z.string().default(""),
 	TMUX_PERSIST: z.string().optional(),
 });
 

@@ -1,10 +1,11 @@
-import "dotenv/config";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { trpcServer } from "@hono/trpc-server";
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import { type UIMessage, convertToModelMessages, streamText } from "ai";
+import "dotenv/config";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { streamText, convertToModelMessages, type UIMessage } from "ai";
 import { auth } from "./lib/auth";
 import { createContext } from "./lib/context";
 import { env } from "./lib/env";
@@ -26,6 +27,9 @@ app.use(
 
 const google = createGoogleGenerativeAI({
 	apiKey: env.GOOGLE_API_KEY || undefined,
+});
+const openrouter = createOpenRouter({
+	apiKey: env.OPENROUTER_API_KEY || undefined,
 });
 
 app.on(["POST", "GET"], "/api/auth/**", (c) => auth.handler(c.req.raw));
@@ -49,7 +53,7 @@ app.post("/api/chat", async (c) => {
 		}
 
 		const result = streamText({
-			model: google("gemini-2.5-flash"),
+			model: openrouter("openrouter/sonoma-dusk-alpha"),
 			messages: convertToModelMessages(messages),
 			tools: aiTools,
 			// Enable streaming of tool call deltas/parts for UI rendering.
