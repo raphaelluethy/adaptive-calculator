@@ -20,3 +20,5 @@ export const featureFlags = sqliteTable("feature_flags", {
 });
 
 export type SchemaFeatureFlag = typeof featureFlags.$inferSelect;
+export type FeatureFlagType = (typeof featureFlags.type.enumValues)[number];
+export const FEATURE_FLAG_TYPES = featureFlags.type.enumValues;

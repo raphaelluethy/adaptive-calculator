@@ -1,11 +1,14 @@
+import { FEATURE_FLAG_TYPES } from "@/db/schema/feature-flags";
 import { defaultFeatureFlags } from "@/routers/feature-flags";
 import { tool } from "ai";
 import { z } from "zod";
 import { executeShellCommand } from "./exec";
-import { updateFeatureFlag } from "./feature-flags";
+import { createFeatureFlag, updateFeatureFlag } from "./feature-flags";
 import { executeGemini } from "./gemini";
 
-const featureFlagKeys = Object.values(defaultFeatureFlags).map((f) => f.flag);
+const featureFlagKeys = [
+	...new Set(Object.values(defaultFeatureFlags).map((f) => f.flag)),
+];
 
 export const aiTools = {
 	executeShellCommand: tool({
@@ -95,6 +98,31 @@ export const aiTools = {
 		}),
 		execute: async ({ flagName, enabled }) => {
 			const result = await updateFeatureFlag(flagName, enabled);
+			return result;
+		},
+	}),
+
+	createFeatureFlag: tool({
+		description: "Create a new feature flag in the calculator application",
+		inputSchema: z.object({
+			flagName: z
+				.string()
+				.describe(
+					`The name of the feature flag to create, you have the following options: ${featureFlagKeys.join(
+						", ",
+					)}. If the user does not specifically provide the exact flag name, the tool will try to match it with the available options, e.g. "chat-box" could match "chatBox or chat box". If you match the flag name, tell so when responding.`,
+				),
+			enabled: z
+				.boolean()
+				.describe("Whether the feature flag should be enabled or disabled"),
+			type: z
+				.enum(FEATURE_FLAG_TYPES)
+				.describe(
+					`The type of the feature flag. You have the following options: ${FEATURE_FLAG_TYPES.join(", ")}`,
+				),
+		}),
+		execute: async ({ flagName, enabled, type }) => {
+			const result = await createFeatureFlag(flagName, enabled, type);
 			return result;
 		},
 	}),

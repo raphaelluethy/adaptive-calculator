@@ -48,22 +48,12 @@ CREATE TABLE `verification` (
 	`updated_at` integer
 );
 --> statement-breakpoint
-CREATE TABLE `feature_flag_excludes` (
-	`id` text PRIMARY KEY NOT NULL,
-	`flag` text NOT NULL,
-	`excluded_flag` text NOT NULL,
-	`created_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL,
-	`updated_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL,
-	FOREIGN KEY (`flag`) REFERENCES `feature_flags`(`flag`) ON UPDATE no action ON DELETE no action,
-	FOREIGN KEY (`excluded_flag`) REFERENCES `feature_flags`(`flag`) ON UPDATE no action ON DELETE no action
-);
---> statement-breakpoint
 CREATE TABLE `feature_flags` (
 	`id` text PRIMARY KEY NOT NULL,
 	`flag` text NOT NULL,
 	`value` integer NOT NULL,
-	`created_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL,
-	`updated_at` integer DEFAULT CURRENT_TIMESTAMP NOT NULL,
+	`created_at` integer DEFAULT (unixepoch()) NOT NULL,
+	`updated_at` integer DEFAULT (unixepoch()) NOT NULL,
 	`type` text NOT NULL
 );
 --> statement-breakpoint
@@ -71,15 +61,15 @@ CREATE UNIQUE INDEX `feature_flags_flag_unique` ON `feature_flags` (`flag`);--> 
 CREATE TABLE `log_sessions` (
 	`id` text PRIMARY KEY NOT NULL,
 	`user_id` text,
-	`created_at` integer NOT NULL,
-	`updated_at` integer NOT NULL,
+	`created_at` integer DEFAULT (unixepoch()) NOT NULL,
+	`updated_at` integer DEFAULT (unixepoch()) NOT NULL,
 	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
 CREATE TABLE `logs` (
 	`id` text PRIMARY KEY NOT NULL,
 	`session_id` text NOT NULL,
-	`date` integer NOT NULL,
+	`date` integer DEFAULT (unixepoch()) NOT NULL,
 	`type` text NOT NULL,
 	`data` text NOT NULL,
 	FOREIGN KEY (`session_id`) REFERENCES `log_sessions`(`id`) ON UPDATE no action ON DELETE no action

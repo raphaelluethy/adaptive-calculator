@@ -93,4 +93,4 @@ The project is structured as a monorepo with two main applications:
 *   **Monorepo Management:** The project uses `turbo` to manage the monorepo. The `turbo.json` file defines the tasks for the monorepo.
 *   **ATTENTION:** You are not allowed to run pnpm run dev at any time without explicit permission.
 *   **NEVER use build or dev commands** unless explicitly instructed (pnpm build, pnpm dev, turbo build, turbo dev)
-*   **Adding Feature Flag or Theme**: If you add a new theme or feature flag, run the pnpn run db:generate and pnpn run db:migrate command.
+*   **DONT USE THE CREATE DB TOOL OR THE DATABASE STUDIO OR THE DATABASE CLI**

@@ -1,5 +1,6 @@
 import { db } from "@/db";
-import { featureFlags } from "@/db/schema/feature-flags";
+import { FEATURE_FLAG_TYPES, featureFlags } from "@/db/schema/feature-flags";
+import type { FeatureFlagType } from "@/db/schema/feature-flags";
 import { publicProcedure, router } from "@/lib/trpc";
 import { TRPCError } from "@trpc/server";
 import { and, eq, ne } from "drizzle-orm";
@@ -9,7 +10,7 @@ export const defaultFeatureFlags = {
 	chatBox: {
 		flag: "chat-box",
 		value: true,
-		type: "ui",
+		type: "functionality",
 		default: true,
 	},
 	defaultRender: {
@@ -84,7 +85,7 @@ export const featureFlagsRouter = router({
 					await db.insert(featureFlags).values({
 						flag: flag.flag,
 						value: flag.value,
-						type: flag.type as "theme" | "ui" | "functionality",
+						type: flag.type as FeatureFlagType,
 					});
 				}
 				return await db.select().from(featureFlags);
@@ -116,13 +117,14 @@ export const featureFlagsRouter = router({
 
 				const flagType = existingFlag[0].type;
 
-				if (input.value === true) {
-					await db
-						.update(featureFlags)
-						.set({ value: input.value })
-						.where(eq(featureFlags.flag, input.flag));
+				// Update the flag value
+				await db
+					.update(featureFlags)
+					.set({ value: input.value })
+					.where(eq(featureFlags.flag, input.flag));
 
-					// disable flags from same type except the current one
+				// If enabling a flag, disable other flags of the same type (except functionality)
+				if (input.value === true) {
 					await db
 						.update(featureFlags)
 						.set({ value: false })
@@ -130,43 +132,39 @@ export const featureFlagsRouter = router({
 							and(
 								eq(featureFlags.type, flagType),
 								ne(featureFlags.flag, input.flag),
+								ne(featureFlags.type, "functionality"),
+							),
+						);
+				}
+
+				// Check if at least one flag per type is enabled for UI and theme types
+				if (flagType === "theme" || flagType === "ui") {
+					const enabledFlags = await db
+						.select()
+						.from(featureFlags)
+						.where(
+							and(
+								eq(featureFlags.type, flagType),
+								eq(featureFlags.value, true),
 							),
 						);
 
-					// check if at least one flag per type is enabled
-					if (flagType === "theme" || flagType === "ui") {
-						const enabledFlags = await db
-							.select()
-							.from(featureFlags)
-							.where(
-								and(
-									eq(featureFlags.type, flagType),
-									eq(featureFlags.value, true),
-								),
-							);
-
-						if (enabledFlags.length === 0) {
-							const defaultFlag = Object.values(defaultFeatureFlags).find(
-								(flag) => flag.type === flagType && flag.default,
-							);
-							if (!defaultFlag) {
-								throw new TRPCError({
-									code: "NOT_FOUND",
-									message: "Default flag not found",
-								});
-							}
-							await db
-								.update(featureFlags)
-								.set({ value: true })
-								.where(eq(featureFlags.flag, defaultFlag.flag));
+					if (enabledFlags.length === 0) {
+						const defaultFlag = Object.values(defaultFeatureFlags).find(
+							(flag) => flag.type === flagType && flag.default,
+						);
+						if (!defaultFlag) {
+							throw new TRPCError({
+								code: "NOT_FOUND",
+								message: "Default flag not found",
+							});
 						}
+						await db
+							.update(featureFlags)
+							.set({ value: true })
+							.where(eq(featureFlags.flag, defaultFlag.flag));
 					}
 				}
-
-				await db
-					.update(featureFlags)
-					.set({ value: input.value })
-					.where(eq(featureFlags.flag, input.flag));
 
 				return { flag: input.flag, value: input.value };
 			} catch (error) {
@@ -181,7 +179,7 @@ export const featureFlagsRouter = router({
 		.input(
 			z.object({
 				flag: z.string().min(1).max(255),
-				type: z.enum(["theme", "ui", "functionality"]),
+				type: z.enum(FEATURE_FLAG_TYPES),
 				value: z.boolean(),
 			}),
 		)

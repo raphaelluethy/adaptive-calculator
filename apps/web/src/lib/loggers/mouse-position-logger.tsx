@@ -3,6 +3,7 @@ import { useMutation } from "@tanstack/react-query";
 import { nanoid } from "nanoid";
 import { useEffect, useRef } from "react";
 import { LOG_SESSION_KEY } from "./index";
+import { authClient } from "@/lib/auth-client";
 
 export default function MousePositionLogger({
 	updateRate = 100,
@@ -12,16 +13,21 @@ export default function MousePositionLogger({
 	const logMutation = useMutation(trpc.logs.createLog.mutationOptions());
 	const lastSent = useRef(0);
 	const sessionId = useRef<string | null>(null);
+	const { data: session, isLoading } = authClient.useSession();
 
 	useEffect(() => {
+		if (!session?.user) return;
+		
 		sessionId.current = localStorage.getItem(LOG_SESSION_KEY);
 		if (!sessionId.current) {
 			sessionId.current = nanoid();
 			localStorage.setItem(LOG_SESSION_KEY, sessionId.current);
 		}
-	}, []);
+	}, [session?.user]);
 
 	useEffect(() => {
+		if (!session?.user) return;
+
 		const handler = (e: MouseEvent) => {
 			if (window.location.pathname === "/analytics") return;
 			const now = Date.now();
@@ -55,7 +61,10 @@ export default function MousePositionLogger({
 		};
 		window.addEventListener("mousemove", handler);
 		return () => window.removeEventListener("mousemove", handler);
-	}, [updateRate, logMutation.mutate]);
+	}, [updateRate, logMutation.mutate, session?.user]);
+
+	if (isLoading) return null;
+	if (!session?.user) return null;
 
 	return null;
 }

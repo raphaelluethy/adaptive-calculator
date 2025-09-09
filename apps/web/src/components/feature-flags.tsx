@@ -1,7 +1,7 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/utils/trpc";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 export function FeatureFlags() {
 	const queryClient = useQueryClient();
@@ -11,10 +11,11 @@ export function FeatureFlags() {
 	const updateFlagMutation = useMutation(
 		trpc.featureFlags.update.mutationOptions({
 			onSuccess: () => {
+				console.log("Feature flag updated");
 				queryClient.invalidateQueries({
 					queryKey: trpc.featureFlags.get.queryKey(),
 				});
-				toast.success(`Feature flag updated`);
+				toast.success("Feature flag updated");
 			},
 			onError: (error) => {
 				console.error("Error updating feature flag:", error);
