@@ -1,9 +1,9 @@
+import { authClient } from "@/lib/auth-client";
 import { trpc } from "@/utils/trpc";
 import { useMutation } from "@tanstack/react-query";
 import { nanoid } from "nanoid";
 import { useEffect, useRef } from "react";
 import { LOG_SESSION_KEY } from "./index";
-import { authClient } from "@/lib/auth-client";
 
 export default function MousePositionLogger({
 	updateRate = 100,
@@ -13,11 +13,11 @@ export default function MousePositionLogger({
 	const logMutation = useMutation(trpc.logs.createLog.mutationOptions());
 	const lastSent = useRef(0);
 	const sessionId = useRef<string | null>(null);
-	const { data: session, isLoading } = authClient.useSession();
+	const { data: session, isPending } = authClient.useSession();
 
 	useEffect(() => {
 		if (!session?.user) return;
-		
+
 		sessionId.current = localStorage.getItem(LOG_SESSION_KEY);
 		if (!sessionId.current) {
 			sessionId.current = nanoid();
@@ -63,8 +63,7 @@ export default function MousePositionLogger({
 		return () => window.removeEventListener("mousemove", handler);
 	}, [updateRate, logMutation.mutate, session?.user]);
 
-	if (isLoading) return null;
-	if (!session?.user) return null;
+	if (isPending || !session?.user) return null;
 
 	return null;
 }
