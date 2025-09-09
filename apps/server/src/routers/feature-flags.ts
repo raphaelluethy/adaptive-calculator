@@ -1,112 +1,76 @@
-import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
-import { z } from "zod";
 import { db } from "@/db";
-import { featureFlagExcludes, featureFlags } from "@/db/schema/feature-flags";
+import { featureFlags } from "@/db/schema/feature-flags";
 import { publicProcedure, router } from "@/lib/trpc";
+import { TRPCError } from "@trpc/server";
+import { and, eq, ne } from "drizzle-orm";
+import { z } from "zod";
 
 export const defaultFeatureFlags = {
 	chatBox: {
 		flag: "chat-box",
 		value: true,
-		excludes: [],
 		type: "ui",
+		default: true,
 	},
 	defaultRender: {
 		flag: "default-render",
 		value: true,
-		excludes: ["sdui"],
 		type: "ui",
+		default: true,
 	},
 	sdui: {
 		flag: "sdui",
 		value: false,
-		excludes: ["default-render"],
 		type: "ui",
+		default: false,
 	},
 	lightTheme: {
 		flag: "light-theme",
 		value: false,
-		excludes: [
-			"dark-theme",
-			"tokyo-night-theme",
-			"monokai-theme",
-			"post-modern-theme",
-			"default-theme",
-		],
 		type: "theme",
+		default: false,
 	},
 	darkTheme: {
 		flag: "dark-theme",
 		value: false,
-		excludes: [
-			"light-theme",
-			"tokyo-night-theme",
-			"monokai-theme",
-			"post-modern-theme",
-			"default-theme",
-		],
 		type: "theme",
+		default: false,
 	},
 	tokyoNightTheme: {
 		flag: "tokyo-night-theme",
 		value: false,
-		excludes: [
-			"light-theme",
-			"dark-theme",
-			"monokai-theme",
-			"post-modern-theme",
-			"default-theme",
-		],
 		type: "theme",
+		default: false,
 	},
 	monokaiTheme: {
 		flag: "monokai-theme",
 		value: false,
-		excludes: [
-			"light-theme",
-			"dark-theme",
-			"tokyo-night-theme",
-			"post-modern-theme",
-			"default-theme",
-		],
 		type: "theme",
+		default: false,
 	},
 	postModernTheme: {
 		flag: "post-modern-theme",
 		value: false,
-		excludes: [
-			"light-theme",
-			"dark-theme",
-			"tokyo-night-theme",
-			"monokai-theme",
-			"default-theme",
-		],
 		type: "theme",
+		default: false,
 	},
 	defaultTheme: {
 		flag: "default-theme",
 		value: true,
-		excludes: [
-			"light-theme",
-			"dark-theme",
-			"tokyo-night-theme",
-			"monokai-theme",
-			"post-modern-theme",
-		],
 		type: "theme",
+		default: true,
 	},
 	decimalNumbers: {
 		flag: "decimal-numbers",
 		value: true,
-		excludes: [],
 		type: "functionality",
+		default: true,
 	},
 	negativeNumbers: {
 		flag: "negative-numbers",
 		value: true,
-		excludes: [],
 		type: "functionality",
+		default: true,
 	},
 };
 
@@ -120,16 +84,8 @@ export const featureFlagsRouter = router({
 					await db.insert(featureFlags).values({
 						flag: flag.flag,
 						value: flag.value,
-						type: flag.type as "theme" | "ui" | "other",
+						type: flag.type as "theme" | "ui" | "functionality",
 					});
-				}
-				for (const flag of Object.values(defaultFeatureFlags)) {
-					for (const exclude of flag.excludes) {
-						await db.insert(featureFlagExcludes).values({
-							flag: flag.flag,
-							excludedFlag: exclude,
-						});
-					}
 				}
 				return await db.select().from(featureFlags);
 			}
@@ -146,38 +102,115 @@ export const featureFlagsRouter = router({
 		.input(z.object({ flag: z.string(), value: z.boolean() }))
 		.mutation(async ({ input }) => {
 			try {
-				const exists = await db
+				const existingFlag = await db
 					.select()
 					.from(featureFlags)
 					.where(eq(featureFlags.flag, input.flag));
-				if (exists.length === 0) {
+
+				if (existingFlag.length === 0) {
 					throw new TRPCError({
 						code: "NOT_FOUND",
 						message: "Flag not found",
 					});
 				}
+
+				const flagType = existingFlag[0].type;
+
 				if (input.value === true) {
-					const excludedFlags = await db
-						.select()
-						.from(featureFlagExcludes)
-						.where(eq(featureFlagExcludes.flag, input.flag));
-					for (const excludedFlag of excludedFlags) {
-						await db
-							.update(featureFlags)
-							.set({ value: false })
-							.where(eq(featureFlags.flag, excludedFlag.excludedFlag));
+					await db
+						.update(featureFlags)
+						.set({ value: input.value })
+						.where(eq(featureFlags.flag, input.flag));
+
+					// disable flags from same type except the current one
+					await db
+						.update(featureFlags)
+						.set({ value: false })
+						.where(
+							and(
+								eq(featureFlags.type, flagType),
+								ne(featureFlags.flag, input.flag),
+							),
+						);
+
+					// check if at least one flag per type is enabled
+					if (flagType === "theme" || flagType === "ui") {
+						const enabledFlags = await db
+							.select()
+							.from(featureFlags)
+							.where(
+								and(
+									eq(featureFlags.type, flagType),
+									eq(featureFlags.value, true),
+								),
+							);
+
+						if (enabledFlags.length === 0) {
+							const defaultFlag = Object.values(defaultFeatureFlags).find(
+								(flag) => flag.type === flagType && flag.default,
+							);
+							if (!defaultFlag) {
+								throw new TRPCError({
+									code: "NOT_FOUND",
+									message: "Default flag not found",
+								});
+							}
+							await db
+								.update(featureFlags)
+								.set({ value: true })
+								.where(eq(featureFlags.flag, defaultFlag.flag));
+						}
 					}
 				}
+
 				await db
 					.update(featureFlags)
 					.set({ value: input.value })
 					.where(eq(featureFlags.flag, input.flag));
+
 				return { flag: input.flag, value: input.value };
 			} catch (error) {
 				console.error("Error updating feature flag:", error);
 				throw new TRPCError({
 					code: "INTERNAL_SERVER_ERROR",
 					message: "Failed to update feature flag",
+				});
+			}
+		}),
+	create: publicProcedure
+		.input(
+			z.object({
+				flag: z.string().min(1).max(255),
+				type: z.enum(["theme", "ui", "functionality"]),
+				value: z.boolean(),
+			}),
+		)
+		.mutation(async ({ input }) => {
+			try {
+				const existingFlag = await db
+					.select()
+					.from(featureFlags)
+					.where(eq(featureFlags.flag, input.flag));
+
+				if (existingFlag.length === 0) {
+					await db.insert(featureFlags).values({
+						flag: input.flag,
+						type: input.type,
+						value: input.value,
+					});
+				} else {
+					await db
+						.update(featureFlags)
+						.set({ value: input.value })
+						.where(eq(featureFlags.flag, input.flag));
+				}
+
+				return { flag: input.flag, value: input.value };
+			} catch (error) {
+				console.error("Error creating feature flag:", error);
+				throw new TRPCError({
+					code: "INTERNAL_SERVER_ERROR",
+					message: "Failed to create feature flag",
 				});
 			}
 		}),
