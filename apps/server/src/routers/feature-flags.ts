@@ -55,6 +55,12 @@ export const defaultFeatureFlags = {
 		type: "theme",
 		default: false,
 	},
+	sunsetTheme: {
+		flag: "sunset-theme",
+		value: false,
+		type: "theme",
+		default: false,
+	},
 	defaultTheme: {
 		flag: "default-theme",
 		value: true,
