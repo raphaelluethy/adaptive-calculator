@@ -1,8 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { themes } from "@/config/themes";
 import { useCalculator } from "@/hooks/use-calculator";
 import { trpc } from "@/utils/trpc";
-import { themes } from "@/config/themes";
+import { useQuery } from "@tanstack/react-query";
 
 export default function ServerDrivenCalculator() {
 	const { display, handleButtonClick } = useCalculator();
