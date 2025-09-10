@@ -53,7 +53,7 @@ app.post("/api/chat", async (c) => {
 		}
 
 		const result = streamText({
-			model: openrouter("openrouter/sonoma-dusk-alpha"),
+			model: openrouter("google/gemini-2.5-flash"),
 			messages: convertToModelMessages(messages),
 			tools: aiTools,
 			// Enable streaming of tool call deltas/parts for UI rendering.
